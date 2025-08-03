@@ -13,10 +13,12 @@ const aiRouter =require('./routes/aiChatting')
 const cors = require('cors')
 // const serviceAccount = require('./utils/firebaseauth.json');
 const admin = require('firebase-admin');
+const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
+
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: allowedOrigin,
     credentials: true 
-}))
+}));
 const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
 const serviceAccount = JSON.parse(serviceAccountString);
 
