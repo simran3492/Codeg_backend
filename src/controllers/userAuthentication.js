@@ -358,12 +358,19 @@ const socialLogin = async (req, res) => {
       { expiresIn: 60 * 60 }
     );
 
+    // res.cookie("token", token, {
+    //   httpOnly: true,
+    //   secure: false, // Should be true in production with HTTPS
+    //   sameSite: "lax",
+    //   maxAge: 60 * 60 * 1000,
+    // });
+
     res.cookie("token", token, {
-      httpOnly: true,
-      secure: false, // Should be true in production with HTTPS
-      sameSite: "lax",
-      maxAge: 60 * 60 * 1000,
-    });
+  httpOnly: true,
+  secure: true,       // Secure flag is now always on
+  sameSite: 'none',   // SameSite is now always 'none'
+  maxAge: 60 * 60 * 1000, // 1 hour
+});
 
     return res.status(statusCode).json({
       message,
