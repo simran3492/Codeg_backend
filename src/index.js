@@ -11,12 +11,14 @@ const problemRouter=require('./routes/problemRoute')
 const submitRouter = require("./routes/submit")
 const aiRouter =require('./routes/aiChatting')
 const cors = require('cors')
-const serviceAccount = require('./utils/firebaseauth.json');
+// const serviceAccount = require('./utils/firebaseauth.json');
 const admin = require('firebase-admin');
 app.use(cors({
     origin: 'http://localhost:5173',
     credentials: true 
 }))
+const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+const serviceAccount = JSON.parse(serviceAccountString);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
