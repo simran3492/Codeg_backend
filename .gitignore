@@ -5,7 +5,7 @@
 .env
 
 # Service account keys and other secrets
-*.json
+firebaseauth.json
 
 # Log files
 logs
