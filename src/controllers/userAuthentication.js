@@ -133,12 +133,18 @@ const register = async (req, res) => {
     });
 
     // 5. Set the token in an HTTP-only cookie for security
+    // res.cookie("token", token, {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === 'production', // Use 'true' in production
+    //   sameSite: "lax",
+    //   maxAge: 60 * 60 * 1000 // 1 hour in milliseconds
+    // });
     res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // Use 'true' in production
-      sameSite: "lax",
-      maxAge: 60 * 60 * 1000 // 1 hour in milliseconds
-    });
+  httpOnly: true,
+  secure: true,       // Secure flag is now always on
+  sameSite: 'none',   // SameSite is now always 'none'
+  maxAge: 60 * 60 * 1000, // 1 hour
+});
 
     const reply = {
         firstName: user.firstName,
@@ -179,12 +185,18 @@ const login=async (req,res)=>{
         
 
         const token =  jwt.sign({_id:user._id , emailID:emailID, role:user.role},process.env.JWT_KEY,{expiresIn: 60*60});
+        // res.cookie("token", token, {
+        //   httpOnly: true,
+        //   secure: false,
+        //   sameSite: "lax",
+        //   maxAge: 60 * 60 * 1000
+        // });
         res.cookie("token", token, {
-          httpOnly: true,
-          secure: false,
-          sameSite: "lax",
-          maxAge: 60 * 60 * 1000
-        });
+  httpOnly: true,
+  secure: true,       // Secure flag is now always on
+  sameSite: 'none',   // SameSite is now always 'none'
+  maxAge: 60 * 60 * 1000, // 1 hour
+});
 
         const reply={
             firstName: user.firstName,
