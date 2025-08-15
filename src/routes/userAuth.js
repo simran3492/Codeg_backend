@@ -1,6 +1,6 @@
 const express=require('express')
 const authRouter=express.Router();
-const {register,login,logout,adminRegister,deleteProfile,socialLogin,checkauth,sendOtp,getAllUsers,updateUserRole}=require('../controllers/userAuthentication');
+const {register,login,logout,adminRegister,deleteProfile,socialLogin,checkauth,sendOtp,getAllUsers,updateUserRole,update_user}=require('../controllers/userAuthentication');
 const userMiddleware = require('../middleware/usermiddle');
 const adminMiddleware = require('../middleware/adminMiddle');
 
@@ -13,6 +13,7 @@ authRouter.delete('/deleteProfile',userMiddleware,deleteProfile);
 authRouter.get('/check',userMiddleware,checkauth)
 authRouter.get('/getalluser',adminMiddleware,getAllUsers)
 authRouter.put('/role/:userId', adminMiddleware, updateUserRole);
+authRouter.put("/updateUser",userMiddleware,update_user)
 
 // authRouter.get('/check',userMiddleware,(req,res)=>{
 

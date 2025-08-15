@@ -48,6 +48,10 @@ const userSchema=new Schema({
        // required: true,
        unique: true, // Each Firebase user has a unique UID
   },
+  subscribed:{
+        type:Boolean,
+        default:false
+    },
    displayName: {
        type: String,
        // required: true,

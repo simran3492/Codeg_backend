@@ -147,9 +147,14 @@ const register = async (req, res) => {
 });
 
     const reply = {
-        firstName: user.firstName,
-        emailId: user.emailID, // Corrected to match schema if it's 'emailID'
-        _id: user._id
+        id: user._id,
+        firebaseUid: user.firebaseUid,
+        displayName: user.displayName,
+        emailID: user.emailID,
+        photoURL: user.photoURL,
+        role:user.role,
+        createdAt:user.createdAt,
+        firstName:user.firstName
     };
 
     // 6. Send success response
@@ -203,6 +208,9 @@ const login=async (req,res)=>{
             emailID: user.emailID,
             _id: user._id,
             role: req.result.role,
+            createdAt:req.result.createdAt,
+            firstName:req.rsult.firstName,
+            photoURL: req.result.photoURL,
         }
         res.status(200).json({
             message: "Login Successful",
@@ -306,9 +314,11 @@ const checkauth= async(req,res)=>{
 
     const reply = {
         firstName: req.result.firstName,
-        emailId: req.result.emailId,
+        emailID: req.result.emailID,
         _id:req.result._id,
         role: req.result.role,
+        photoURL:req.result.photoURL,
+        createdAt:req.result.createdAt
     }
 
     res.status(200).json({
@@ -337,7 +347,7 @@ const socialLogin = async (req, res) => {
       // --- Existing user ---
       user.firebaseUid = uid;
       user.displayName = name;
-      user.photoURL = picture || user.photoURL;
+      user.photoURL =  user.photoURL || picture;
       user.providerId = providerId;
 
       await user.save();
@@ -351,7 +361,7 @@ const socialLogin = async (req, res) => {
         displayName: name,
         photoURL: picture || "",
         providerId,
-        firstName: name?.split(" ")[0] || "User",
+        firstName: name || "User",
         password: "SOCIAL_LOGIN_USER_DOES_NOT_USE_PASSWORD",
       });
 
@@ -392,7 +402,9 @@ const socialLogin = async (req, res) => {
         displayName: user.displayName,
         emailID: user.emailID,
         photoURL: user.photoURL,
-        role:user.role
+        role:user.role,
+        createdAt:user.createdAt,
+        firstName:user.firstName
       },
     });
 
@@ -449,7 +461,77 @@ const updateUserRole = async (req, res) => {
         res.status(500).json({ message: 'Error updating user role', error: error.message });
     }
 };
+const update_user = async (req, res) => {
+    try {
+        if (!req.result || !req.result._id) {
+            return res.status(401).json({ message: "Authentication required." });
+        }
+       
+        // console.log("Received body:", req.body); // Good for debugging
+        const userId = req.result._id;
+
+        // 1. FIX: Correctly destructure all expected fields from the frontend
+        const { firstName, lastName, age, photoURL, password } = req.body;
+
+        const updateData = {};
+
+        // Handle firstName
+        if (firstName && typeof firstName === 'string' && firstName.trim() !== "") {
+            updateData.firstName = firstName.trim();
+        }
+
+        // 2. ADD: Handle lastName
+        if (lastName && typeof lastName === 'string' && lastName.trim() !== "") {
+            updateData.lastName = lastName.trim();
+        }
+
+        // 3. ADD: Handle age
+        if (age && !isNaN(parseInt(age))) {
+            updateData.age = parseInt(age);
+        }
+
+        // 4. FIX: Use the correct variable name 'photoURL'
+        if (photoURL && typeof photoURL === 'string') {
+            updateData.photoURL = photoURL; // Changed from phototURL
+        }
+
+        // Handle password (your existing logic is fine)
+        if (password) {
+            if (typeof password !== 'string' || password.length < 8) {
+                return res.status(400).json({ message: "Password must be at least 8 characters long." });
+            }
+            // ... (add your other password validation rules here)
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+            updateData.password = hashedPassword;
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({ message: "No valid data provided for update." });
+        }
+
+        // This part is correct and should now work
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { $set: updateData },
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        res.status(200).json({
+            message: "Profile updated successfully!",
+            user: updatedUser
+        });
+
+    } catch (error) {
+        console.error("Error updating profile:", error);
+        res.status(500).json({ message: "Server error while updating profile." });
+    }
+};
 
 
 
-module.exports={register,login,logout,adminRegister,deleteProfile,socialLogin,checkauth,sendOtp,getAllUsers,updateUserRole};
+module.exports={register,login,logout,adminRegister,deleteProfile,socialLogin,checkauth,sendOtp,getAllUsers,updateUserRole,update_user};

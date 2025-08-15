@@ -2,6 +2,8 @@ const Problem=require('../models/problem')
 const User=require("../models/user")
 const Submission = require("../models/submission");
 const {getLanguageById,submitBatch,submitToken}=require('../utils/problemUtility')
+const SolutionVideo = require("../models/solutionVideo")
+
 
 const createProblem=async (req,res)=>{
     console.log('hello')
@@ -228,8 +230,41 @@ const getProblemById = async (req, res) => {
 
         if (!getProblem)
             return res.status(404).send("Problem is Missing");
+        console.log(getProblem._id)
+        const videos = await SolutionVideo.findOne({ problemId: getProblem._id })
 
-        res.status(200).send(getProblem);
+        if (videos) {
+            // console.log("uytht")
+              const transformation = "f_jpg,so_0";
+              let thumbnailUrl = videos.secureUrl.replace(
+        '/upload/',
+        `/upload/${transformation}/`
+    );
+
+    // 3. Change the final extension to .jpg so browsers recognize it as an image.
+    if (thumbnailUrl.endsWith('.mp4')) {
+       thumbnailUrl = thumbnailUrl.slice(0, -4) + '.jpg';
+    }
+            const responseData = {
+                ...getProblem.toObject(),
+                secureUrl: videos.secureUrl,
+                thumbnailUrl: thumbnailUrl,
+                duration: videos.duration,
+            }
+
+            res.status(200).json({
+                problem: responseData
+            });
+
+        }
+        else {
+
+            res.status(200).json({
+                problem: getProblem
+            });
+        }
+
+        // res.status(200).send(getProblem);
 
     } catch (err) {
     // THIS WILL SHOW THE REAL ERROR IN YOUR NODE.JS CONSOLE
@@ -254,31 +289,52 @@ const getAllProblem = async(req,res)=>{
     res.status(500).send("Error: "+err);
   }
 }
-const solvedAllProblembyUser =  async(req,res)=>{
-     
-    try{
-      //  console.log("hg")
-      // const count=req.result.problemSolved.length;
-      // console.log(count)
-      // res.status(200).send(count);
-      const userId = req.result?._id;
-      
+const solvedAllProblembyUser = async (req, res) => {
+    try {
+        // console.log('hello')
+        const userId = req.result?._id;
 
-      const user =  await User.findById(userId).populate({
-        path:"problemSolved",
-        select:"_id title difficulty tags serial_number"
-      });
-      
-      res.status(200).json(user.problemSolved);
+        if (!userId) {
+            return res.status(401).json({ message: "User not authenticated" });
+        }
 
-    }
-    catch (err) {
-        // CRITICAL: This will now log the real error to your terminal
-        
-        
+        // 1. Find all submissions made by the logged-in user.
+        const submissions = await Submission.find({ userId: userId })
+            // 2. Populate the 'problemId' field to get details from the associated Problem document.
+            //    We select only the title and difficulty as that's what the frontend needs.
+            .populate({
+                path: 'problemId',
+                select: 'title difficulty'
+            })
+            .select("status difficulty createdAt problemId language runtime memory ")
+            // 3. Sort by creation date to show the most recent submissions first.
+            .sort({ createdAt: -1 })
+            // 4. Use .lean() for better performance on read-only queries.
+            .lean();
+
+        // 5. Map the results to create the exact field names the frontend expects
+        //    (e.g., 'problem_title' and 'problem_difficulty'). This prevents frontend changes.
+        const formattedSubmissions = submissions.map(s => ({
+            ...s, // Spread the original submission fields (status, language, runtime, etc.)
+         
+            problem_title: s.problemId?.title || "Unknown",
+            problem_difficulty: s.problemId?.difficulty,
+            problem_id: s.problemId?._id,
+            status: s.status,
+            date: s.createdAt,
+            language:s.language
+         // Safely access populated difficulty
+        }));
+
+        // 6. Send the response in the structure the frontend is waiting for: { submissions: [...] }
+        res.status(200).json({ submissions: formattedSubmissions });
+
+    } catch (err) {
+        // Log the actual error for easier debugging
+        console.error("Error fetching user submissions:", err);
         res.status(500).json({ message: "Server Error" });
     }
-}
+};
 const submittedProblem = async (req, res) => {
     try {
 
@@ -337,4 +393,23 @@ const submittedProblem = async (req, res) => {
     }
 };
 
-module.exports={createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblembyUser,submittedProblem};
+const potd = async (req, res) => {
+    try {
+
+        // console.log("555")
+        const getProblem = await Problem.findOne({ isProblemOfTheDay: true });
+        // console.log(getProblem)
+        if (!getProblem)
+            return res.status(404).json("Problem is Missing");
+
+
+        res.status(200).json({
+            problem: getProblem
+        });
+    }
+    catch (err) {
+        res.status(500).send("Error: " + err);
+    }
+}
+
+module.exports={createProblem,updateProblem,deleteProblem,getProblemById,getAllProblem,solvedAllProblembyUser,submittedProblem,potd};

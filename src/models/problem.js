@@ -83,6 +83,19 @@ const problemSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref:'user',
         // required:true
+    },
+     isProblemOfTheDay: {
+        type: Boolean,
+        default: false,
+        index: true 
+    },
+    potdDate: {
+        type: String,
+        default: "null"
+    },
+    isprime:{
+        type:Boolean,
+        default:false
     }
 })
 
