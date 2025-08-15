@@ -27,9 +27,9 @@ app.use(cors({
 const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
 const serviceAccount = JSON.parse(serviceAccountString);
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+// admin.initializeApp({
+//   credential: admin.credential.cert(serviceAccount)
+// });
 
 app.use(express.json());
 app.use(cookieParser());
